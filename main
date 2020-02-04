@@ -1,0 +1,179 @@
+package main;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Arrays;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.WindowConstants;
+
+public class Kodierwuerfel implements ActionListener {
+
+	// Frame
+	JFrame frame = new JFrame("Kodier Würfel");
+
+	// Text Area
+	JTextArea textArea = new JTextArea(20, 40);
+
+	// Text Fields
+	JTextField textFeld = new JTextField(20);
+	JTextField passwortFeld = new JTextField(20);
+
+	// Buttons
+	JButton verschluesseln = new JButton("Verschlüsseln");
+	JButton entschluesseln = new JButton("Entschlüsseln");
+
+	// Panel
+	JPanel panel = new JPanel();
+
+	// Scroll Pane
+	JScrollPane scrollPane = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+			JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+
+	public Kodierwuerfel() {
+		createUI();
+	}
+
+	public void createUI() {
+
+		// Panel Eigenschaften
+		panel.add(scrollPane);
+
+		// Text Fields & Areas Eigenschaften
+		textArea.setEditable(false);
+		textFeld.setUI(new InputHinweise("Bitte geben Sie einen Text hier ein..", Color.gray));
+		passwortFeld.setUI(new InputHinweise("Passwort", Color.gray));
+
+		// Frame Eigenschaften
+		frame.setSize(490, 455);
+		frame.setLocation(100, 300);
+		frame.setLayout(new FlowLayout());
+		frame.setResizable(false);
+		frame.add(scrollPane);
+		frame.add(textFeld);
+		frame.add(passwortFeld);
+		frame.add(verschluesseln);
+		frame.add(entschluesseln);
+		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		frame.setVisible(true);
+
+		// Buttons Eigenschaften
+		verschluesseln.setPreferredSize(new Dimension(120, 19));
+		verschluesseln.addActionListener(this);
+		verschluesseln.setActionCommand("chiffrieren");
+		entschluesseln.setPreferredSize(new Dimension(120, 19));
+		entschluesseln.addActionListener(this);
+		entschluesseln.setActionCommand("entziffern");
+	}
+
+	public void actionPerformed(ActionEvent event) {
+
+		String action = event.getActionCommand();
+		String text = textFeld.getText();
+		String passwort = passwortFeld.getText();
+
+		// Fehlermeldung
+		try {
+			passwort.charAt(0);
+		} catch (Exception z) {
+			JOptionPane.showMessageDialog(null, "Bitte geben Sie einen Passwort in das rechte Feld ein!", "Fehler",
+					JOptionPane.WARNING_MESSAGE);
+		}
+
+		switch (action) {
+
+		case "chiffrieren":
+			textArea.setText(encrypt(text, passwort));
+			break;
+
+		case "entziffern":
+			textArea.setText(decrypt(text, passwort));
+			break;
+		}
+	}
+
+	// Encryption
+	private static String encrypt(String text, String passwort) {
+
+		int[] spaltenreihenfolge = getColumnOrder(passwort);
+		String[] spalten = new String[passwort.length()];
+
+		Arrays.fill(spalten, "");
+
+		for (int i = 0; i < text.length(); i++) {
+			spalten[i % passwort.length()] += text.toCharArray()[i];
+		}
+
+		String resultat = "";
+
+		for (int i = 0; i < passwort.length(); i++) {
+			resultat += spalten[spaltenreihenfolge[i]];
+		}
+
+		return resultat;
+	}
+
+	// Decryption
+	private static String decrypt(String text, String passwort) {
+
+		int[] spaltenreihenfolge = getColumnOrder(passwort);
+		int p = 0;
+		String[] spalten = new String[passwort.length()];
+
+		Arrays.fill(spalten, null);
+
+		for (int i = 0; i < passwort.length(); i++) {
+
+			int k = spaltenreihenfolge[i];
+			int l = (int) Math.floor(text.length() / passwort.length());
+
+			if (k < text.length() % passwort.length())
+				l++;
+			spalten[k] = text.substring(p, p + l);
+			p += l;
+		}
+
+		String resultat = "";
+
+		for (int i = 0; i < text.length(); i++) {
+			int k = i % passwort.length();
+			resultat += spalten[k].toCharArray()[i / passwort.length()];
+		}
+		return resultat;
+	}
+
+	private static int[] getColumnOrder(String passwort) {
+
+		char[] charArray = passwort.toCharArray();
+		Arrays.sort(charArray);
+
+		String sortiertesPasswort = new String(charArray);
+		int[] sortierteSpaltenreihenfolge = new int[passwort.length()];
+		int p = 0;
+		char vorherigesCharakter = 0;
+
+		for (int i = 0; i < sortiertesPasswort.length(); i++) {
+			if (vorherigesCharakter != sortiertesPasswort.toCharArray()[i])
+				p = 0;
+			vorherigesCharakter = sortiertesPasswort.toCharArray()[i];
+			p = passwort.indexOf(vorherigesCharakter, p);
+			sortierteSpaltenreihenfolge[i] = p;
+			p++;
+		}
+
+		return sortierteSpaltenreihenfolge;
+	}
+
+	public static void main(String[] args) {
+		new Kodierwuerfel();
+	}
+}
